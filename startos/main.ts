@@ -41,6 +41,9 @@ export const main = sdk.setupMain(async ({ effects }) => {
     exec: { command: ['/usr/local/bin/docker_entrypoint.sh'], env },
     ready: {
       display: i18n('Server API'),
+      // Startup takes ~15s, longer while upstream migrations run after an
+      // update; report it as starting rather than failed.
+      gracePeriod: 60_000,
       fn: () =>
         sdk.healthCheck.checkPortListening(effects, uiPort, {
           successMessage: i18n('The Standard Notes Server is ready'),

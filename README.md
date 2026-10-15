@@ -113,7 +113,7 @@ None. The service is never held on a prompt, and its controls are always availab
 The `primary` daemon has one readiness check, **Server API**.
 
 - **What it probes:** whether anything listens on port 3000.
-- **Slow start:** the server takes about 15 seconds to start, longer when upstream migrations run after an update, so failures in that window are expected.
+- **Grace period:** 60 seconds. The server takes about 15 seconds to start, longer when upstream migrations run after an update; within the grace period the check reports starting rather than failed.
 - **A failure that persists** means the Node process exited or never bound the port. The service log shows why; the usual causes are a failed database migration or a damaged `store.json`.
 
 ## Backups and Restore
