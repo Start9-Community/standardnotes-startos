@@ -3,7 +3,7 @@ import { sdk } from '../sdk'
 
 // Package-internal state. Written only by our init + actions, so .const()
 // gives automatic restart-on-change.
-const storeConfigSchema = z.object({
+const storeConfigSchema = z.looseObject({
   // Generated once at install; each is 32 random bytes as hex (openssl rand
   // -hex 32). They sign tokens and encrypt server-side secrets, so they must
   // stay stable across restarts and survive in the backed-up main volume.

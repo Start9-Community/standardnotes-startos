@@ -5,30 +5,18 @@ export const manifest = setupManifest({
   id: 'standardnotes-server',
   title: 'Standard Notes Server',
   license: 'MIT',
-  packageRepo: 'https://github.com/wksantiago/standardnotes-startos',
+  packageRepo: 'https://github.com/privkeyio/standardnotes-startos',
   upstreamRepo: 'https://github.com/standardnotes/server',
-  marketingUrl: 'https://github.com/standardnotes/server',
+  marketingUrl: 'https://standardnotes.com',
   donationUrl: null,
-  description: {
-    short,
-    long,
-  },
+  description: { short, long },
   volumes: ['main'],
   images: {
+    // Built from the `server` submodule by the Dockerfile; upstream publishes
+    // no image of the home server.
     'standardnotes-server': {
-      source: {
-        dockerBuild: {},
-      },
+      source: { dockerBuild: {} },
       arch: ['x86_64'],
     },
   },
-  alerts: {
-    install: null,
-    update: null,
-    uninstall: null,
-    restore: null,
-    start: null,
-    stop: null,
-  },
-  dependencies: {},
 })

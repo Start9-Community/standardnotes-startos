@@ -24,7 +24,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
   if (store.filesServerUrl) env.FILES_SERVER_URL = store.filesServerUrl
   if (store.premiumActivationMode) env.E2E_TESTING = 'true'
 
-  const subcontainer = await sdk.SubContainer.of(
+  const subcontainer = sdk.SubContainer.of(
     effects,
     { imageId: 'standardnotes-server' },
     sdk.Mounts.of().mountVolume({
