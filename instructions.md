@@ -45,7 +45,7 @@ A response with no certificate error means the server and CA are trusted; only t
 
 Use the **Configure** action to set:
 
-- **Files Server URL:** the public address clients use to reach the files server. Set this to the address you point your Standard Notes app at if you use file attachments. Leave blank to disable file uploads.
+- **Files Server URL:** the public HTTPS address of this server, such as `https://notes.example.com`. The home server handles file uploads at the same address as sync, and every client sends uploads to this URL. Always use the public address, even if your desktop app connects through the `localhost:3123` tunnel described under [Unlocking premium on desktop](#unlocking-premium-on-desktop): a `localhost` value sends every other client's uploads to its own machine, so they fail. Leave blank to disable file uploads.
 - **Premium Activation Mode:** temporarily exposes an unauthenticated endpoint used to grant a subscription to a self-hosted account (see [Premium features](#premium-features)). Leave it off except while activating; it also forces legacy sessions while enabled.
 
 Saving the configuration restarts the service.

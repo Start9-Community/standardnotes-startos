@@ -8,7 +8,7 @@ const inputSpec = InputSpec.of({
   filesServerUrl: Value.text({
     name: i18n('Files Server URL'),
     description: i18n(
-      'Public URL clients use to reach the files server (the address you point your Standard Notes app at). Required only if you upload files. Leave blank to disable.',
+      'Public HTTPS address of this server, such as https://notes.example.com. Do not use a localhost address, even if you use the localhost:3123 desktop tunnel. Required only if you upload files. Leave blank to disable.',
     ),
     required: false,
     default: null,

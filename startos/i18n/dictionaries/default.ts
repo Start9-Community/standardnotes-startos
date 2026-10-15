@@ -14,7 +14,7 @@ const dict = {
   Configure: 5,
   'Configure the files server URL': 6,
   'Files Server URL': 7,
-  'Public URL clients use to reach the files server (the address you point your Standard Notes app at). Required only if you upload files. Leave blank to disable.': 8,
+  'Public HTTPS address of this server, such as https://notes.example.com. Do not use a localhost address, even if you use the localhost:3123 desktop tunnel. Required only if you upload files. Leave blank to disable.': 8,
   'Configuration saved': 9,
   'The service is restarting with the new settings.': 10,
   'Premium Activation Mode': 11,
