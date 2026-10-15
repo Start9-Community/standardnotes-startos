@@ -186,6 +186,18 @@ With either option, set the desktop app's custom sync server to `https://localho
 - **Offline activation does not work here:** the home server's offline-features endpoint cannot identify the user in single-process mode, and the apps only accept `localhost` as an offline features host, so this path is a dead end.
 - The only way to get tunnel-free premium (including on mobile) is to run a **patched Standard Notes app** that adds your host to its first-party allowlist — a separate project outside this package.
 
+## Listing accounts
+
+The server has no admin page or API for listing accounts. To see who has registered, SSH into your StartOS server, open a shell in the service, and query its database (read-only, safe while the server is running):
+
+```sh
+sudo start-cli package attach standardnotes-server
+cd /opt/server/packages/auth && yarn node -e 'const s=require("sqlite3");const db=new s.Database("/data/database/home_server.sqlite",s.OPEN_READONLY);db.all("SELECT u.email, u.created_at, GROUP_CONCAT(r.name) AS roles FROM users u LEFT JOIN user_roles ur ON ur.user_uuid=u.uuid LEFT JOIN roles r ON r.uuid=ur.role_uuid GROUP BY u.uuid ORDER BY u.created_at",(e,rows)=>{if(e)throw e;console.table(rows)})'
+exit
+```
+
+This prints each account's email, creation time (UTC), and roles. Every account has `CORE_USER`; accounts granted premium (see [Granting the subscription](#granting-the-subscription)) also have `PRO_USER`.
+
 ## Sessions and addresses
 
 Session cookies issued by this server are host-only — they are bound to the exact address you connect to. If you reach the server at more than one address (for example the LAN address and a Tor or clearnet address), each address keeps its own session, so signing in on one will not carry over to another.
