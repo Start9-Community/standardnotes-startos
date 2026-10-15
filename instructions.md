@@ -1,15 +1,22 @@
 # Standard Notes Server
 
-Standard Notes Server is the self-hosted backend for the Standard Notes end-to-end encrypted notes apps. This package runs the all-in-one home server: a single process bundling sync, auth, files, and revisions, with an embedded SQLite database. Your encrypted notes, tags, and revision history live on your own server.
+## Documentation
 
-## First-time setup
+- [Self-hosting the web app](https://standardnotes.com/help/self-hosting/web-app) — run your own copy of the Standard Notes web app and point it at this server.
+- [File uploads on a self-hosted server](https://standardnotes.com/help/self-hosting/file-uploads) — upstream notes on the files server URL and upload troubleshooting.
+
+## What you get on StartOS
+
+A private sync server for the Standard Notes apps. It exposes one **Server API** address that the desktop, mobile, and web apps connect to. Your encrypted notes, tags, uploaded files, and revision history are stored on your server. There is no web page to open; you use it from the Standard Notes apps.
+
+## Getting set up
 
 1. **Find this server's address.** Open this service's page in StartOS and copy the **Server API** interface address. The LAN address is served over HTTPS using your server's own root CA, so its address looks like `https://<host>` (or `https://<ip>:<port>`).
 2. **Trust the certificate** on the device you connect from (see [Trusting the HTTPS certificate](#trusting-the-https-certificate) below). This is the most common cause of a "Failed to fetch" error.
 3. **Point your Standard Notes app at it.** In the Standard Notes app, open the account / advanced options, choose to use a custom sync server, and enter the address from step 1.
 4. **Register an account.** Create your account from within the app. Your notes are encrypted on the client before they reach the server.
 
-There is no web interface to open here — this package is the API backend that the Standard Notes apps connect to. You can use the official desktop, mobile, or web app (<https://app.standardnotes.com>), or self-host the web app separately (the `standardnotes/web` image; see <https://standardnotes.com/help/self-hosting/web-app>) and point it at this server.
+You can use the official desktop, mobile, or web app (<https://app.standardnotes.com>), or a web app you host yourself (see [Self-hosting the web app](https://standardnotes.com/help/self-hosting/web-app)).
 
 ## Trusting the HTTPS certificate
 
@@ -202,19 +209,7 @@ This prints each account's email, creation time (UTC), and roles. Every account 
 
 Session cookies issued by this server are host-only — they are bound to the exact address you connect to. If you reach the server at more than one address (for example the LAN address and a Tor or clearnet address), each address keeps its own session, so signing in on one will not carry over to another.
 
-## Secrets
-
-The server's signing and encryption secrets are generated automatically the first time the service is installed and are kept in the service's data volume. Do not lose them — they are required to read existing data. They are included in StartOS backups.
-
-## Data and backups
-
-All state — the SQLite database, uploaded files, and this package's settings — lives in the service's data volume and is captured by StartOS backups. Restoring a backup brings back your encrypted notes and account.
-
 ## Troubleshooting
 
 - **"Failed to fetch" when signing in.** The client does not trust the server's certificate. Install the root CA on the device (see [Trusting the HTTPS certificate](#trusting-the-https-certificate)), and make sure you are using the HTTPS Server API address, not an `http://` one.
 - **The app keeps asking for your password ("refresh your session").** This happens for a session created before the certificate/address was set up correctly; that session cannot be repaired. Sign out fully and sign back in to create a fresh session. Your notes are encrypted and remain safe on the server.
-
-## Learn more
-
-For general background on self-hosting Standard Notes, see the official docs: <https://standardnotes.com/help/self-hosting/docker>. Note that this package runs the all-in-one **home server** with an embedded database, so the external MySQL, Redis, and object-storage steps in those docs do not apply here.

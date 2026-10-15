@@ -2,6 +2,8 @@
 .gitmodules
 node_modules
 javascript
+ncc-cache
+docker-images
 *.s9pk
 server/.git
 server/node_modules
