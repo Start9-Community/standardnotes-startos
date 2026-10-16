@@ -9,7 +9,7 @@
 > the upstream documentation is accurate and fully applicable — see the
 > Documentation section of `instructions.md` for links.
 
-This package runs the Standard Notes **home server**, the all-in-one self-host build of [standardnotes/server](https://github.com/standardnotes/server): one Node process that bundles the sync, auth, files, and revisions services on an embedded SQLite database and on-disk file storage. The Standard Notes desktop and mobile apps, and a self-hosted `standardnotes/web`, connect to it as a custom sync server.
+This package runs the Standard Notes **home server**, the all-in-one self-host build of [standardnotes/server](https://github.com/standardnotes/server): one Node process that bundles the sync, auth, files, and revisions services on an embedded SQLite database and on-disk file storage. The Standard Notes desktop and mobile apps connect to it as a custom sync server, and the package serves upstream's web app alongside it.
 
 ---
 
@@ -32,16 +32,18 @@ This package runs the Standard Notes **home server**, the all-in-one self-host b
 
 ## Image and Container Runtime
 
-Upstream publishes no image of the home server, so the package builds its own from source; Valkey runs beside it from the upstream image.
+Upstream publishes no image of the home server, so the package builds its own from source; Valkey runs beside it from the upstream image, and the web app is served by nginx from files taken out of upstream's web image.
 
-| What          | Value                                                                                                                               |
-| ------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Image source  | Custom `Dockerfile`: the `server` git submodule (upstream monorepo) built with Yarn on a Node Alpine base; `valkey/valkey` (Alpine) |
-| Architectures | x86_64, aarch64                                                                                                                     |
-| Entrypoint    | `node --require /opt/server/.pnp.cjs dist/bin/server.js` in `packages/home-server`                                                  |
-| Subcontainers | `standardnotes-server` (daemon `primary`), `valkey` (daemon `valkey`)                                                               |
+| What          | Value                                                                                                                                                                                                                                                   |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Image source  | Custom `Dockerfile`: the `server` git submodule (upstream monorepo) built with Yarn on a Node Alpine base; `valkey/valkey` (Alpine); `web/Dockerfile`: nginx Alpine serving the static files of upstream's `standardnotes/web` image (pinned by digest) |
+| Architectures | x86_64, aarch64                                                                                                                                                                                                                                         |
+| Entrypoint    | `node --require /opt/server/.pnp.cjs dist/bin/server.js` in `packages/home-server`                                                                                                                                                                      |
+| Subcontainers | `standardnotes-server` (daemon `primary`), `valkey` (daemon `valkey`), `web` (daemon `web`)                                                                                                                                                             |
 
 Valkey listens on `127.0.0.1:6379` with persistence disabled; the files service needs it for short-lived valet tokens even in home-server mode. `primary` starts once Valkey answers `PING`. Upstream's `docker/docker-entrypoint.sh` is not used.
+
+Upstream builds its web image for amd64 only, but its contents are architecture-independent static files, so `web/Dockerfile` copies them into a multi-arch nginx image. The image's `index.html` is edited at build time so the app's default sync server and files host are the origin it is loaded from, and its websocket URL is empty (the home server has no websocket service). nginx serves the app's files and proxies every other path to the server on `127.0.0.1:3000`, so the web app and the API share one origin.
 
 ## Volume and Data Layout
 
@@ -78,13 +80,14 @@ None.
 
 ## Network Access and Interfaces
 
-The package exposes the server's HTTP API on a single interface; StartOS provides TLS for the LAN, Tor, and any domain the user adds.
+The package exposes the server's HTTP API and the web app on two interfaces of one host, so both share every hostname; StartOS provides TLS for the LAN, Tor, and any domain the user adds.
 
 | Interface id | Type  | Port | Protocol | Purpose                                                              |
 | ------------ | ----- | ---- | -------- | -------------------------------------------------------------------- |
 | `api`        | `api` | 3000 | HTTP     | Sync, auth, files, and revisions API used by the Standard Notes apps |
+| `web`        | `ui`  | 8080 | HTTP     | Upstream's web app, plus the API proxied on the same origin          |
 
-There is no web UI. Session cookies are host-only (empty `COOKIE_DOMAIN`), so each address a client uses holds its own session.
+The web app signs in to the server it is served from with no server address to enter; the desktop and mobile apps use the **Server API** address. Session cookies are host-only (empty `COOKIE_DOMAIN`), so each address a client uses holds its own session.
 
 ## Installation and First-Run Flow
 
@@ -128,13 +131,18 @@ The package raises up to two tasks, neither of which blocks the service.
 
 ## Health Checks
 
-Two checks are displayed: **Server API**, the `primary` daemon's readiness check, and **Signups**. Valkey's readiness (`valkey-cli ping`) is internal and not displayed.
+Three checks are displayed: **Server API**, the `primary` daemon's readiness check; **Web App**, the `web` daemon's; and **Signups**. Valkey's readiness (`valkey-cli ping`) is internal and not displayed.
 
 ### Server API
 
 - **What it probes:** `GET http://127.0.0.1:3000/healthcheck`, every 5 seconds until it passes and every 30 seconds after.
 - **Grace period:** 60 seconds. The server takes about 15 seconds to start, longer when upstream migrations run after an update; within the grace period the check reports starting rather than failed.
 - **A failure that persists** means the Node process exited or never bound the port. The service log shows why; the usual causes are a failed database migration or a damaged `store.json`.
+
+### Web App
+
+- **What it probes:** that nginx is listening on port 8080. It starts after **Server API** passes.
+- **A failure that persists** means nginx exited; the service log shows its error.
 
 ### Signups
 
@@ -152,8 +160,8 @@ A restore brings back accounts, notes, files, subscriptions, and the secrets, so
 These are the ways the package differs from an upstream self-hosted deployment.
 
 1. **Home server only.** The upstream multi-service deployment (MySQL, separate Redis, S3-compatible storage, separate files and revisions servers) is not available.
-2. **No web app.** The package is the API backend. Upstream's hosted web app cannot reach it — app.standardnotes.com's Content-Security-Policy `connect-src` allows only Standard Notes' own hosts — so use the desktop or mobile apps, or host `standardnotes/web` separately.
-3. **Premium is limited by the apps, not the server.** The official apps honor a subscription only on first-party hosts, `localhost:3123` among them, so premium unlocks only through a local `localhost:3123` proxy on desktop, never on mobile.
+2. **The hosted web app cannot reach this server.** app.standardnotes.com's Content-Security-Policy `connect-src` allows only Standard Notes' own hosts; use the package's **Web App** interface instead.
+3. **Premium is limited by the apps, not the server.** The official apps, and the built-in Web App, honor a subscription only on first-party hosts, `localhost:3123` among them. Premium therefore unlocks only through a local forward to `localhost:3123`: the Web App opened at `http://localhost:3123`, or the desktop app pointed at a TLS-terminating proxy there. Never on mobile. StartOS does not answer TLS for the name `localhost`, so a plain TCP passthrough to the server fails.
 4. **Offline premium activation does not work** in home-server mode.
 5. **The submodule may sit ahead of the release tag.** Upstream lands security fixes on `main` between `@standardnotes/home-server` releases, and the package builds the pinned commit while carrying the workspace's version.
 
@@ -165,8 +173,8 @@ images:
   standardnotes-server: built from Dockerfile (standardnotes/server submodule, home-server workspace)
   valkey: valkey/valkey (alpine)
 architectures: [x86_64, aarch64]
-subcontainers: [standardnotes-server, valkey]
-daemons: [valkey, primary]
+subcontainers: [standardnotes-server, valkey, web]
+daemons: [valkey, primary, web]
 volumes:
   main: /data
 file_models:
@@ -187,6 +195,7 @@ startos_managed_env_vars:
 dependencies: none
 interfaces:
   api: { type: api, port: 3000 }
+  web: { type: ui, port: 8080 }
 actions:
   - toggle-signups
   - set-primary-url
@@ -196,5 +205,6 @@ tasks:
   - set-primary-url (important, while unset or stale)
 health_checks:
   - primary # displayed "Server API"
+  - web # displayed "Web App"
   - signups # fails while signups are open
 ```
