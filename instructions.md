@@ -2,21 +2,22 @@
 
 ## Documentation
 
-- [Self-hosting the web app](https://standardnotes.com/help/self-hosting/web-app) — run your own copy of the Standard Notes web app and point it at this server.
-- [File uploads on a self-hosted server](https://standardnotes.com/help/self-hosting/file-uploads) — upstream notes on the files server URL and upload troubleshooting.
+- [Standard Notes Help](https://standardnotes.com/help/*) — the upstream help center: using the apps, custom sync servers, and self-hosting.
 
 ## What you get on StartOS
 
-A private sync server for the Standard Notes apps. It exposes one **Server API** address that the desktop, mobile, and web apps connect to. Your encrypted notes, tags, uploaded files, and revision history are stored on your server. There is no web page to open; you use it from the Standard Notes apps.
+A private sync server for the Standard Notes apps. It exposes one **Server API** address that the desktop, mobile, and web apps connect to; there is no web page to open. Your encrypted notes, tags, uploaded files, and revision history are stored on your server.
 
 ## Getting set up
 
-1. **Find this server's address.** Open this service's page in StartOS and copy the **Server API** interface address. The LAN address is served over HTTPS using your server's own root CA, so its address looks like `https://<host>` (or `https://<ip>:<port>`).
-2. **Trust the certificate** on the device you connect from (see [Trusting the HTTPS certificate](#trusting-the-https-certificate) below). This is the most common cause of a "Failed to fetch" error.
-3. **Point your Standard Notes app at it.** In the Standard Notes app, open the account / advanced options, choose to use a custom sync server, and enter the address from step 1.
-4. **Register an account.** Create your account from within the app. Your notes are encrypted on the client before they reach the server.
+1. **Find this server's address.** Copy the **Server API** address from this service's page. The LAN address is served over HTTPS with your server's own root CA.
+2. **Trust the certificate** on each device you connect from (see [Trusting the HTTPS certificate](#trusting-the-https-certificate) below). This is the most common cause of a "Failed to fetch" error.
+3. **Point your Standard Notes app at it.** In the app's sign-in screen, open the advanced options, choose a custom sync server, and enter the address from step 1.
+4. **Register your accounts.** Create each account from within the app. Your notes are encrypted on the device before they reach the server.
+5. **Disable signups.** Run the **Disable Signups** task. Until you do, anyone who can reach the address can create an account on your server. The **Signups** health check stays failed while signups are open.
+6. **Choose the files address** if you will upload files. Run **Set Files URL** and pick an address every device you use can reach.
 
-You can use the official desktop, mobile, or web app (<https://app.standardnotes.com>), or a web app you host yourself (see [Self-hosting the web app](https://standardnotes.com/help/self-hosting/web-app)).
+You can use the official desktop, mobile, or web app (<https://app.standardnotes.com>), or a web app you host yourself.
 
 ## Trusting the HTTPS certificate
 
@@ -48,14 +49,11 @@ curl --cacert /path/to/root-ca.crt https://<server-api-address>/healthcheck
 
 A response with no certificate error means the server and CA are trusted; only the app's trust store remains.
 
-## Configuration
+## Actions
 
-Use the **Configure** action to set:
-
-- **Files Server URL:** the public HTTPS address of this server, such as `https://notes.example.com`. The home server handles file uploads at the same address as sync, and every client sends uploads to this URL. Always use the public address, even if your desktop app connects through the `localhost:3123` tunnel described under [Unlocking premium on desktop](#unlocking-premium-on-desktop): a `localhost` value sends every other client's uploads to its own machine, so they fail. Leave blank to disable file uploads.
-- **Premium Activation Mode:** temporarily exposes an unauthenticated endpoint used to grant a subscription to a self-hosted account (see [Premium features](#premium-features)). Leave it off except while activating; it also forces legacy sessions while enabled.
-
-Saving the configuration restarts the service.
+- **Disable Signups / Enable Signups:** closes or reopens registration. Existing accounts are unaffected. Reopen it briefly to add an account, then close it again.
+- **Set Files URL:** chooses the address the apps send file uploads to. Pick one every device can reach — a domain or Tor address for devices away from home, not the `.local` address.
+- **Activate Premium:** grants an account a premium subscription (see [Premium features](#premium-features)). Stop the service first; the action is available only while it is stopped.
 
 ## Premium features
 
@@ -75,19 +73,11 @@ Because `localhost:3123` is on that list, the workaround is to make this server 
 
 ### Granting the subscription
 
-1. In the **Configure** action, turn **Premium Activation Mode** ON and save.
-2. Grant your account a subscription. Run the following from a terminal on any computer that can reach the server's API address over the network and has the root CA file (for example your own laptop or desktop — not on the StartOS server itself, and not inside the app). Replace the email, CA path, and server address:
+1. Create the account in a Standard Notes app first.
+2. Stop the service, run **Activate Premium**, and enter the account's email.
+3. Start the service again.
 
-   ```sh
-   curl --cacert /path/to/root-ca.crt -X POST https://<server-api-address>/e2e/activate-premium \
-     -H 'Content-Type: application/json' \
-     -d '{"username":"you@example.com","subscriptionId":1,"subscriptionPlanName":"PRO_PLAN","uploadBytesLimit":107374182400,"endsAt":4102444800000}'
-   ```
-
-   `endsAt` is a millisecond timestamp (the example is the year 2100). A `{"message":"Premium features activated."}` response means the `PRO_USER` role and subscription are stored in your data volume (and captured by backups).
-3. Turn **Premium Activation Mode** OFF and save.
-
-The grant persists across restarts, updates, and backups. By itself it unlocks nothing in the app until the app is connected through a first-party host.
+The grant lasts until the year 2100 and survives restarts, updates, and backups. Running it again for the same account replaces the earlier grant. By itself it unlocks nothing in the app until the app is connected through a first-party host.
 
 ### Unlocking premium on desktop
 
@@ -198,7 +188,7 @@ With either option, set the desktop app's custom sync server to `https://localho
 The server has no admin page or API for listing accounts. To see who has registered, SSH into your StartOS server, open a shell in the service, and query its database (read-only, safe while the server is running):
 
 ```sh
-sudo start-cli package attach standardnotes-server
+sudo start-cli package attach standardnotes-server -n standardnotes-server
 cd /opt/server/packages/auth && yarn node -e 'const s=require("sqlite3");const db=new s.Database("/data/database/home_server.sqlite",s.OPEN_READONLY);db.all("SELECT u.email, u.created_at, GROUP_CONCAT(r.name) AS roles FROM users u LEFT JOIN user_roles ur ON ur.user_uuid=u.uuid LEFT JOIN roles r ON r.uuid=ur.role_uuid GROUP BY u.uuid ORDER BY u.created_at",(e,rows)=>{if(e)throw e;console.table(rows)})'
 exit
 ```
