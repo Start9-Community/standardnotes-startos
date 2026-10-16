@@ -113,8 +113,8 @@ The package has three user-facing actions.
 **Activate Premium** (`activate-premium`)
 
 - **When to run it:** to grant an existing account a Standard Notes premium subscription. Available only while the service is stopped.
-- **What it changes:** starts a private, temporary copy of the server on `127.0.0.1:3001` with upstream's `E2E_TESTING` activation endpoint enabled, posts the account's email to `POST /e2e/activate-premium` (Pro plan, unlimited uploads, ending 2100, cancelling any earlier grant), and tears the copy down. The grant lands in the SQLite database; the running service never exposes the endpoint.
-- **Cost:** about 30 seconds while the temporary server starts and stops.
+- **What it changes:** runs `activate-premium.js` in a temporary container against the stopped server's SQLite database. The script boots upstream's auth service in-process and calls its `ActivatePremiumFeatures` use case (Pro plan, unlimited uploads, ending 2100, cancelling any earlier grant), with no HTTP listener.
+- **Cost:** a few seconds.
 - **Repeat safety:** safe to repeat; each run replaces the account's previous grant. Fails with upstream's message (`User not found with username: …`) for an unknown email.
 
 ## Tasks

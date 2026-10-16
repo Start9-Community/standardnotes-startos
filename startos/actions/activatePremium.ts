@@ -1,12 +1,9 @@
 import { storeJson } from '../fileModels/store.json'
 import { i18n } from '../i18n'
 import { sdk } from '../sdk'
-import { serverCommand, serverDir, serverEnv, valkeyPort } from '../utils'
+import { serverDir, serverEnv } from '../utils'
 
 const { InputSpec, Value } = sdk
-
-// A private, throwaway server with upstream's activation endpoint enabled.
-const activationPort = 3001
 
 const inputSpec = InputSpec.of({
   email: Value.text({
@@ -40,73 +37,36 @@ export const activatePremium = sdk.Action.withInput(
     const store = await storeJson.read().once()
     if (!store) throw new Error('no store.json')
 
-    const message = await sdk.SubContainer.withTemp(
+    const res = await sdk.SubContainer.withTemp(
       effects,
-      { imageId: 'valkey' },
-      null,
-      'activate-premium-valkey',
-      async (valkey) => {
-        await valkey.launch([
-          'valkey-server',
-          '--bind',
-          '127.0.0.1',
-          '--port',
-          `${valkeyPort}`,
-          '--save',
-          '',
-          '--appendonly',
-          'no',
-        ])
-        return sdk.SubContainer.withTemp(
-          effects,
-          { imageId: 'standardnotes-server' },
-          sdk.Mounts.of().mountVolume({
-            volumeId: 'main',
-            subpath: null,
-            mountpoint: '/data',
-            readonly: false,
-          }),
-          'activate-premium',
-          async (sub) => {
-            await sub.launch(serverCommand, {
-              cwd: serverDir,
-              env: {
-                ...serverEnv(store, ''),
-                PORT: `${activationPort}`,
-                E2E_TESTING: 'true',
-              },
-            })
-            const base = `http://127.0.0.1:${activationPort}`
-            for (let i = 0; i < 120; i++) {
-              const up = await fetch(`${base}/healthcheck`).then(
-                (r) => r.ok,
-                () => false,
-              )
-              if (up) break
-              await new Promise((r) => setTimeout(r, 1000))
-            }
-            const res = await fetch(`${base}/e2e/activate-premium`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                username: input.email.trim(),
-                subscriptionId: 1,
-                endsAt: '2100-01-01T00:00:00Z',
-                cancelPreviousSubscription: true,
-              }),
-            })
-            const body = await res.json()
-            if (!res.ok) throw new Error(body?.error?.message ?? res.statusText)
-            return body.message
-          },
-        )
-      },
+      { imageId: 'standardnotes-server' },
+      sdk.Mounts.of().mountVolume({
+        volumeId: 'main',
+        subpath: null,
+        mountpoint: '/data',
+        readonly: false,
+      }),
+      'activate-premium',
+      (sub) =>
+        sub.exec(
+          [
+            'node',
+            '--require',
+            '/opt/server/.pnp.cjs',
+            'activate-premium.js',
+            input.email.trim(),
+          ],
+          { cwd: serverDir, env: serverEnv(store, '') },
+        ),
     )
+    if (res.exitCode !== 0) {
+      throw new Error(String(res.stderr).trim())
+    }
 
     return {
       version: '1',
       title: i18n('Premium Activated'),
-      message: `${input.email.trim()}: ${message}`,
+      message: `${input.email.trim()}: ${String(res.stdout).trim()}`,
       result: null,
     }
   },

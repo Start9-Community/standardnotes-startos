@@ -12,3 +12,5 @@ RUN corepack enable && \
 
 # The home server keeps its data at ${__dirname}/../data of dist/bin/server.js.
 RUN rm -rf packages/home-server/dist/data && ln -s /data packages/home-server/dist/data
+
+COPY activate-premium.js packages/home-server/
