@@ -22,5 +22,9 @@ export const manifest = setupManifest({
       source: { dockerTag: 'valkey/valkey:9.0.6-alpine' },
       arch: ['x86_64', 'aarch64'],
     },
+    web: {
+      source: { dockerBuild: { dockerfile: './web/Dockerfile' } },
+      arch: ['x86_64', 'aarch64'],
+    },
   },
 })

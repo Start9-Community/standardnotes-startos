@@ -26,6 +26,10 @@ export default {
     21: 'Registros',
     22: 'Los registros están abiertos. Cualquiera que pueda acceder a la dirección de la Server API puede crear una cuenta. Ejecute Desactivar registros cuando sus cuentas existan.',
     23: 'Los registros están deshabilitados',
+    24: 'Aplicación web',
+    25: 'La aplicación web de Standard Notes, conectada a este servidor. Ábrala en un navegador para leer y escribir sus notas.',
+    26: 'La aplicación web está lista',
+    27: 'La aplicación web no responde',
   },
   de_DE: {
     0: 'Standard Notes Server wird gestartet',
@@ -52,6 +56,10 @@ export default {
     21: 'Registrierungen',
     22: 'Registrierungen sind offen. Jeder, der die Server-API-Adresse erreicht, kann ein Konto erstellen. Führen Sie Registrierungen deaktivieren aus, sobald Ihre Konten existieren.',
     23: 'Registrierungen sind deaktiviert',
+    24: 'Web-App',
+    25: 'Die Standard Notes Web-App, verbunden mit diesem Server. Öffnen Sie sie in einem Browser, um Ihre Notizen zu lesen und zu schreiben.',
+    26: 'Die Web-App ist bereit',
+    27: 'Die Web-App antwortet nicht',
   },
   pl_PL: {
     0: 'Uruchamianie Standard Notes Server',
@@ -78,6 +86,10 @@ export default {
     21: 'Rejestracje',
     22: 'Rejestracje są otwarte. Każdy, kto ma dostęp do adresu Server API, może utworzyć konto. Uruchom Wyłącz rejestrację, gdy Twoje konta już istnieją.',
     23: 'Rejestracje są wyłączone',
+    24: 'Aplikacja webowa',
+    25: 'Aplikacja webowa Standard Notes połączona z tym serwerem. Otwórz ją w przeglądarce, aby czytać i pisać notatki.',
+    26: 'Aplikacja webowa jest gotowa',
+    27: 'Aplikacja webowa nie odpowiada',
   },
   fr_FR: {
     0: 'Démarrage de Standard Notes Server',
@@ -104,5 +116,9 @@ export default {
     21: 'Inscriptions',
     22: "Les inscriptions sont ouvertes. Toute personne pouvant joindre l'adresse de la Server API peut créer un compte. Exécutez Désactiver les inscriptions une fois vos comptes créés.",
     23: 'Les inscriptions sont désactivées',
+    24: 'Application web',
+    25: "L'application web Standard Notes, connectée à ce serveur. Ouvrez-la dans un navigateur pour lire et écrire vos notes.",
+    26: "L'application web est prête",
+    27: "L'application web ne répond pas",
   },
 } satisfies Record<string, LangDict>

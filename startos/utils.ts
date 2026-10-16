@@ -2,7 +2,8 @@ import { storeJson, type StoreConfig } from './fileModels/store.json'
 import { i18n } from './i18n'
 import { sdk } from './sdk'
 
-export const uiPort = 3000
+export const apiPort = 3000
+export const webPort = 8080
 export const valkeyPort = 6379
 
 export const serverDir = '/opt/server/packages/home-server'
@@ -18,7 +19,7 @@ export const serverCommand: [string, ...string[]] = [
 
 export const serverEnv = (store: StoreConfig, filesServerUrl: string) => ({
   NODE_ENV: 'production',
-  PORT: `${uiPort}`,
+  PORT: `${apiPort}`,
   REDIS_URL: `redis://127.0.0.1:${valkeyPort}`,
   // Host-only cookies; upstream's default domain (standardnotes.com) never matches.
   COOKIE_DOMAIN: '',

@@ -36,6 +36,12 @@ const dict = {
   Signups: 21,
   'Signups are open. Anyone who can reach the Server API address can create an account. Run Disable Signups once your accounts exist.': 22,
   'Signups are disabled': 23,
+
+  // interfaces.ts / main.ts web app
+  'Web App': 24,
+  'The Standard Notes web app, connected to this server. Open it in a browser to read and write your notes.': 25,
+  'The web app is ready': 26,
+  'The web app is not responding': 27,
 } as const
 
 /**

@@ -6,18 +6,18 @@
 
 ## What you get on StartOS
 
-A private sync server for the Standard Notes apps. It exposes one **Server API** address that the desktop and mobile apps connect to; there is no web page to open. Your encrypted notes, tags, uploaded files, and revision history are stored on your server.
+A private sync server for the Standard Notes apps, with the Standard Notes web app built in. Open the **Web App** interface in a browser, or point the desktop and mobile apps at the **Server API** address. Your encrypted notes, tags, uploaded files, and revision history are stored on your server.
 
 ## Getting set up
 
-1. **Find this server's address.** Copy the **Server API** address from this service's page. The LAN address is served over HTTPS with your server's own root CA.
-2. **Trust the certificate** on each device you connect from (see [Trusting the HTTPS certificate](#trusting-the-https-certificate) below). This is the most common cause of a "Failed to fetch" error.
-3. **Point your Standard Notes app at it.** In the app's sign-in screen, open the advanced options, choose a custom sync server, and enter the address from step 1.
-4. **Register your accounts.** Create each account from within the app. Your notes are encrypted on the device before they reach the server.
+1. **Trust the certificate** on each device you connect from (see [Trusting the HTTPS certificate](#trusting-the-https-certificate) below). The LAN addresses are served over HTTPS with your server's own root CA, and an untrusted certificate is the most common cause of a "Failed to fetch" error.
+2. **In a browser,** open the **Web App** interface. It already uses this server; no address needs entering.
+3. **In the desktop or mobile app,** copy the **Server API** address from this service's page. In the app's sign-in screen, open the advanced options, choose a custom sync server, and enter that address.
+4. **Register your accounts.** Create each account from the web app or an app. Your notes are encrypted on the device before they reach the server.
 5. **Disable signups.** Run the **Disable Signups** task. Until you do, anyone who can reach the address can create an account on your server. The **Signups** health check stays failed while signups are open.
 6. **Choose the files address** if you will upload files. Run **Set Files URL** and pick an address every device you use can reach.
 
-Use the official desktop or mobile app. The hosted web app at app.standardnotes.com cannot connect to your server: its browser security policy only allows Standard Notes' own servers. A web app you host yourself works.
+Use this service's **Web App** rather than app.standardnotes.com: the hosted web app cannot connect to your server, because its browser security policy only allows Standard Notes' own servers.
 
 ## Trusting the HTTPS certificate
 

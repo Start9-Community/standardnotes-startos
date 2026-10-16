@@ -6,8 +6,9 @@ import {
   serverCommand,
   serverDir,
   serverEnv,
-  uiPort,
+  apiPort,
   valkeyPort,
+  webPort,
 } from './utils'
 
 export const main = sdk.setupMain(async ({ effects }) => {
@@ -83,7 +84,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
         fn: () =>
           sdk.healthCheck.checkWebUrl(
             effects,
-            `http://127.0.0.1:${uiPort}/healthcheck`,
+            `http://127.0.0.1:${apiPort}/healthcheck`,
             {
               successMessage: i18n('The Standard Notes Server is ready'),
               errorMessage: i18n('The Standard Notes Server is not responding'),
@@ -91,6 +92,24 @@ export const main = sdk.setupMain(async ({ effects }) => {
           ),
       },
       requires: ['valkey'],
+    })
+    .addDaemon('web', {
+      subcontainer: sdk.SubContainer.of(
+        effects,
+        { imageId: 'web' },
+        null,
+        'web',
+      ),
+      exec: { command: ['nginx', '-g', 'daemon off;'] },
+      ready: {
+        display: i18n('Web App'),
+        fn: () =>
+          sdk.healthCheck.checkPortListening(effects, webPort, {
+            successMessage: i18n('The web app is ready'),
+            errorMessage: i18n('The web app is not responding'),
+          }),
+      },
+      requires: ['primary'],
     })
     .addHealthCheck('signups', {
       ready: {
