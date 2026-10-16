@@ -89,6 +89,8 @@ socat TCP-LISTEN:3123,bind=127.0.0.1,reuseaddr,fork OPENSSL:<server-ip>:<web-app
 
 `<server-ip>` and `<web-app-port>` come from the Web App's LAN address. Open `http://localhost:3123` in your browser, sign out fully, and sign back in. To keep the forward running, put the same command in a systemd user service as shown below.
 
+If this computer also runs the desktop app's proxy below, use that proxy instead: both need port `3123`, and one proxy pointed at the Web App serves both.
+
 ### Unlocking premium in the desktop app
 
 Premium unlocks only when the desktop app reaches the server at `https://localhost:3123`. StartOS does not answer TLS for the name `localhost`, and a public domain's certificate does not match it, so a plain passthrough fails either way. Instead, terminate TLS at a local proxy: present a self-signed `localhost` certificate to the app, and have `socat` open its own TLS connection to your server.
@@ -111,8 +113,8 @@ Premium unlocks only when the desktop app reaches the server at `https://localho
    ```
 
 3. Run the TLS-terminating proxy as a systemd user service. Its upstream is one of:
-   - **The server's LAN address:** `OPENSSL:<server-ip>:<server-api-port>,cafile=/path/to/root-ca.crt`, verified against your server's root CA. The LAN address can change; update the service if it does.
-   - **A public domain** you added to the Server API: `OPENSSL:<your-domain>:443`, verified against the domain's own certificate.
+   - **The Web App's LAN address:** `OPENSSL:<server-ip>:<web-app-port>,cafile=/path/to/root-ca.crt`, verified against your server's root CA. The Web App also serves the server's API, so this one proxy serves the desktop app and, at `https://localhost:3123`, the web app in a browser that trusts `localhost.crt`. The LAN address can change; update the service if it does.
+   - **A public domain** you added to the Web App or the Server API: `OPENSSL:<your-domain>:443`, verified against the domain's own certificate. A domain on the Web App serves both, as above.
 
    ```sh
    mkdir -p ~/.config/systemd/user
