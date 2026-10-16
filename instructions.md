@@ -67,9 +67,9 @@ The official Standard Notes apps only honor an online subscription when connecte
 - `sync.standardnotes.org`
 - `localhost:3123`
 
-Any other sync server — including this self-hosted one at its StartOS address or your own domain — is treated as a **third-party host**, and the apps **ignore the online subscription for premium unlocking**. Your notes still sync perfectly; only the premium editors and themes stay locked. This is a client-side design decision and cannot be changed from the server.
+Any other sync server — including this self-hosted one at its StartOS address or your own domain, and this package's own **Web App** opened at those addresses — is treated as a **third-party host**, and the apps **ignore the online subscription for premium unlocking**. Your notes still sync perfectly; only the premium editors and themes stay locked. This is a client-side design decision and cannot be changed from the server.
 
-Because `localhost:3123` is on that list, the workaround is to make this server reachable at `https://localhost:3123` on your computer (see [Unlocking premium on desktop](#unlocking-premium-on-desktop)).
+Because `localhost:3123` is on that list, the workaround is to make this server reachable at `localhost:3123` on your computer (see [Unlocking premium in the Web App](#unlocking-premium-in-the-web-app) and [Unlocking premium in the desktop app](#unlocking-premium-in-the-desktop-app)).
 
 ### Granting the subscription
 
@@ -79,48 +79,19 @@ Because `localhost:3123` is on that list, the workaround is to make this server 
 
 The grant lasts until the year 2100 and survives restarts, updates, and backups. Running it again for the same account replaces the earlier grant. By itself it unlocks nothing in the app until the app is connected through a first-party host.
 
-### Unlocking premium on desktop
+### Unlocking premium in the Web App
 
-Premium unlocks only when the desktop app reaches the server at `https://localhost:3123`. Run a local proxy on port `3123` that forwards to your server, then point the app at it. There are two ways to set up the proxy, depending on which certificate your server's address presents.
-
-#### Option A — forward to the StartOS address (StartOS certificate)
-
-Use this when you connect to the server's StartOS LAN/clearnet address, which serves a certificate signed by your StartOS root CA. That certificate already includes a `localhost` SAN, so a plain TCP passthrough validates once the root CA is trusted (see [Trusting the HTTPS certificate](#trusting-the-https-certificate)).
-
-One-off (stops when the terminal closes):
+Premium unlocks when the web app is loaded from `localhost:3123`, because it syncs with the address it is loaded from. On the computer you browse from, forward that port to the **Web App** interface's LAN address, using your server's root CA (see [Trusting the HTTPS certificate](#trusting-the-https-certificate)) to verify the connection:
 
 ```sh
-socat TCP-LISTEN:3123,reuseaddr,fork TCP:<server-ip>:<server-port>
+socat TCP-LISTEN:3123,bind=127.0.0.1,reuseaddr,fork OPENSSL:<server-ip>:<web-app-port>,cafile=/path/to/root-ca.crt
 ```
 
-Persistent (Linux, systemd user service):
+`<server-ip>` and `<web-app-port>` come from the Web App's LAN address. Open `http://localhost:3123` in your browser, sign out fully, and sign back in. To keep the forward running, put the same command in a systemd user service as shown below.
 
-```sh
-mkdir -p ~/.config/systemd/user
-cat > ~/.config/systemd/user/sn-tunnel.service <<'EOF'
-[Unit]
-Description=Standard Notes localhost:3123 tunnel to StartOS
-After=network-online.target
-Wants=network-online.target
+### Unlocking premium in the desktop app
 
-[Service]
-ExecStart=/usr/bin/socat TCP-LISTEN:3123,reuseaddr,fork TCP:<server-ip>:<server-port>
-Restart=always
-RestartSec=3
-
-[Install]
-WantedBy=default.target
-EOF
-systemctl --user daemon-reload
-systemctl --user enable --now sn-tunnel.service
-loginctl enable-linger "$USER"   # keep it running across logout/reboot
-```
-
-The drawback is that `<server-ip>:<server-port>` is the StartOS address, which can change; update the service and run `systemctl --user restart sn-tunnel.service` if it does.
-
-#### Option B — forward to a public domain (its own TLS certificate)
-
-Use this when you front the server with a public domain (for example `notes.example.com`) that serves its own certificate, such as Let's Encrypt. A plain passthrough fails here: the app connects to `https://localhost:3123` but is handed a certificate for the domain, so the hostname does not match. Instead, terminate TLS at the proxy — present a self-signed `localhost` certificate to the app, and have `socat` open its own TLS connection out to the domain. This is also more stable, since it does not depend on the changing StartOS LAN address.
+Premium unlocks only when the desktop app reaches the server at `https://localhost:3123`. StartOS does not answer TLS for the name `localhost`, and a public domain's certificate does not match it, so a plain passthrough fails either way. Instead, terminate TLS at a local proxy: present a self-signed `localhost` certificate to the app, and have `socat` open its own TLS connection to your server.
 
 1. Generate a self-signed `localhost` certificate (once; reuse the files on every desktop):
 
@@ -139,9 +110,9 @@ Use this when you front the server with a public domain (for example `notes.exam
      -n "Local localhost proxy" -i ~/.config/sn-tunnel/localhost.crt
    ```
 
-   This is your own `localhost` certificate, not the StartOS root CA — do not import the StartOS CA for this option.
-
-3. Run the TLS-terminating proxy as a systemd user service (replace `<your-domain>`):
+3. Run the TLS-terminating proxy as a systemd user service. Its upstream is one of:
+   - **The server's LAN address:** `OPENSSL:<server-ip>:<server-api-port>,cafile=/path/to/root-ca.crt`, verified against your server's root CA. The LAN address can change; update the service if it does.
+   - **A public domain** you added to the Server API: `OPENSSL:<your-domain>:443`, verified against the domain's own certificate.
 
    ```sh
    mkdir -p ~/.config/systemd/user
@@ -152,7 +123,7 @@ Use this when you front the server with a public domain (for example `notes.exam
    Wants=network-online.target
 
    [Service]
-   ExecStart=/usr/bin/socat OPENSSL-LISTEN:3123,reuseaddr,fork,cert=%h/.config/sn-tunnel/localhost.pem,verify=0 OPENSSL:<your-domain>:443,verify=1
+   ExecStart=/usr/bin/socat OPENSSL-LISTEN:3123,reuseaddr,fork,cert=%h/.config/sn-tunnel/localhost.pem,verify=0 <upstream>
    Restart=always
    RestartSec=3
 
@@ -172,14 +143,14 @@ Use this when you front the server with a public domain (for example `notes.exam
 
    An `OK` response means the proxy presents your `localhost` certificate and reaches the server.
 
-With either option, set the desktop app's custom sync server to `https://localhost:3123`, sign out fully, and sign back in — the premium editors unlock. Sessions are bound to the address, so a session created against another address (the LAN or public domain) will not carry the unlock; sign in fresh on `localhost:3123`.
+Then set the desktop app's custom sync server to `https://localhost:3123`, sign out fully, and sign back in — the premium editors unlock. Sessions are bound to the address, so a session created against another address (the LAN or public domain) will not carry the unlock; sign in fresh on `localhost:3123`.
 
 > `systemctl --user enable --now` does **not** restart an already-running service. If you change the unit file, run `systemctl --user restart sn-tunnel.service`. With a snap install, re-run the `certutil` import after each snap revision update.
 
 ### Limitations
 
 - **Mobile and other devices:** there is no `localhost` server on a phone, so the tunnel cannot work there. Premium on the official mobile apps against a self-hosted server is not achievable.
-- **Custom public domains (direct connection):** pointing the app straight at a domain such as `notes.example.com` is still a third-party host, so premium stays locked; sync works. You can, however, use that domain as the upstream for a `localhost:3123` tunnel (see **Option B** above), which does unlock premium.
+- **Custom public domains (direct connection):** pointing the app straight at a domain such as `notes.example.com` is still a third-party host, so premium stays locked; sync works. You can, however, use that domain as the upstream for the desktop app's `localhost:3123` proxy, which does unlock premium.
 - **Offline activation does not work here:** the home server's offline-features endpoint cannot identify the user in single-process mode, and the apps only accept `localhost` as an offline features host, so this path is a dead end.
 - The only way to get tunnel-free premium (including on mobile) is to run a **patched Standard Notes app** that adds your host to its first-party allowlist — a separate project outside this package.
 

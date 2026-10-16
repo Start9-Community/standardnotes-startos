@@ -161,7 +161,7 @@ These are the ways the package differs from an upstream self-hosted deployment.
 
 1. **Home server only.** The upstream multi-service deployment (MySQL, separate Redis, S3-compatible storage, separate files and revisions servers) is not available.
 2. **The hosted web app cannot reach this server.** app.standardnotes.com's Content-Security-Policy `connect-src` allows only Standard Notes' own hosts; use the package's **Web App** interface instead.
-3. **Premium is limited by the apps, not the server.** The official apps honor a subscription only on first-party hosts, `localhost:3123` among them, so premium unlocks only through a local `localhost:3123` proxy on desktop, never on mobile.
+3. **Premium is limited by the apps, not the server.** The official apps, and the built-in Web App, honor a subscription only on first-party hosts, `localhost:3123` among them. Premium therefore unlocks only through a local forward to `localhost:3123`: the Web App opened at `http://localhost:3123`, or the desktop app pointed at a TLS-terminating proxy there. Never on mobile. StartOS does not answer TLS for the name `localhost`, so a plain TCP passthrough to the server fails.
 4. **Offline premium activation does not work** in home-server mode.
 5. **The submodule may sit ahead of the release tag.** Upstream lands security fixes on `main` between `@standardnotes/home-server` releases, and the package builds the pinned commit while carrying the workspace's version.
 
