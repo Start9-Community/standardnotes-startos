@@ -6,7 +6,7 @@
 
 ## What you get on StartOS
 
-A private sync server for the Standard Notes apps. It exposes one **Server API** address that the desktop, mobile, and web apps connect to; there is no web page to open. Your encrypted notes, tags, uploaded files, and revision history are stored on your server.
+A private sync server for the Standard Notes apps. It exposes one **Server API** address that the desktop and mobile apps connect to; there is no web page to open. Your encrypted notes, tags, uploaded files, and revision history are stored on your server.
 
 ## Getting set up
 
@@ -17,13 +17,13 @@ A private sync server for the Standard Notes apps. It exposes one **Server API**
 5. **Disable signups.** Run the **Disable Signups** task. Until you do, anyone who can reach the address can create an account on your server. The **Signups** health check stays failed while signups are open.
 6. **Choose the files address** if you will upload files. Run **Set Files URL** and pick an address every device you use can reach.
 
-You can use the official desktop, mobile, or web app (<https://app.standardnotes.com>), or a web app you host yourself.
+Use the official desktop or mobile app. The hosted web app at app.standardnotes.com cannot connect to your server: its browser security policy only allows Standard Notes' own servers. A web app you host yourself works.
 
 ## Trusting the HTTPS certificate
 
 The Server API LAN address uses an HTTPS certificate signed by your StartOS server's own root CA. Clients reject this certificate until they trust that CA, which shows up as **"Failed to fetch"** when you try to sign in. Download your server's root CA from StartOS (**System → Root CA**, "Download Certificate") and install it on each device you connect from.
 
-- **Most browsers / OSes:** install the CA into the system or browser trust store, then use the official web app or your browser.
+- **Most browsers / OSes:** install the CA into the system or browser trust store.
 - **Chromium / Electron on Linux** (this includes the **Standard Notes desktop app**): Chromium does not use the system CA store on Linux — it uses the NSS database. Add the CA with `certutil` (from `libnss3-tools`):
 
   ```sh

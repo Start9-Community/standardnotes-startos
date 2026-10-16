@@ -9,7 +9,7 @@
 > the upstream documentation is accurate and fully applicable — see the
 > Documentation section of `instructions.md` for links.
 
-This package runs the Standard Notes **home server**, the all-in-one self-host build of [standardnotes/server](https://github.com/standardnotes/server): one Node process that bundles the sync, auth, files, and revisions services on an embedded SQLite database and on-disk file storage. The Standard Notes desktop, mobile, and web apps connect to it as a custom sync server.
+This package runs the Standard Notes **home server**, the all-in-one self-host build of [standardnotes/server](https://github.com/standardnotes/server): one Node process that bundles the sync, auth, files, and revisions services on an embedded SQLite database and on-disk file storage. The Standard Notes desktop and mobile apps, and a self-hosted `standardnotes/web`, connect to it as a custom sync server.
 
 ---
 
@@ -152,7 +152,7 @@ A restore brings back accounts, notes, files, subscriptions, and the secrets, so
 These are the ways the package differs from an upstream self-hosted deployment.
 
 1. **Home server only.** The upstream multi-service deployment (MySQL, separate Redis, S3-compatible storage, separate files and revisions servers) is not available.
-2. **No web app.** The package is the API backend; use upstream's web app or host one separately.
+2. **No web app.** The package is the API backend. Upstream's hosted web app cannot reach it — app.standardnotes.com's Content-Security-Policy `connect-src` allows only Standard Notes' own hosts — so use the desktop or mobile apps, or host `standardnotes/web` separately.
 3. **Premium is limited by the apps, not the server.** The official apps honor a subscription only on first-party hosts, `localhost:3123` among them, so premium unlocks only through a local `localhost:3123` proxy on desktop, never on mobile.
 4. **Offline premium activation does not work** in home-server mode.
 5. **The submodule may sit ahead of the release tag.** Upstream lands security fixes on `main` between `@standardnotes/home-server` releases, and the package builds the pinned commit while carrying the workspace's version.
