@@ -114,6 +114,11 @@ export const main = sdk.setupMain(async ({ effects }) => {
     .addHealthCheck('signups', {
       ready: {
         display: i18n('Signups'),
+        // The result only changes when main restarts, so check once.
+        gracePeriod: 0,
+        trigger: async function* () {
+          yield
+        },
         fn: () =>
           store.signupsAllowed
             ? {
