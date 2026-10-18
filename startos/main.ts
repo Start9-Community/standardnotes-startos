@@ -114,6 +114,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
     .addHealthCheck('signups', {
       ready: {
         display: i18n('Signups'),
+        trigger: sdk.trigger.statusTrigger(30_000, { starting: 1_000 }),
         fn: () =>
           store.signupsAllowed
             ? {
