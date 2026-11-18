@@ -25,6 +25,18 @@ The current pin is the submodule commit (`git submodule status`).
    - `packages/home-server/src/Server/HomeServer.ts` for changes to the data directory the `Dockerfile` symlinks to `/data` (it ignores `DB_SQLITE_DATABASE_PATH` and `FILE_UPLOAD_PATH` from the environment) and to the environment overrides it passes the auth service, which `activate-premium.js` repeats.
    - `packages/auth/src/Bootstrap/Service.ts` and `ActivatePremiumFeatures` for changes to the `activatePremiumFeatures` method `activate-premium.js` calls.
 
+## The Node runtime
+
+The root `Dockerfile` pins the `node` Alpine image by tag and digest. While upstream's `engines` field and its own `Dockerfile` name only end-of-life Node releases, they do not set the pin. Take the newest release of the pinned LTS line, and move to the next LTS line before the pinned one reaches its end in the [release schedule](https://github.com/nodejs/Release/blob/main/schedule.json):
+
+```sh
+L=$(sed -n 's/^FROM node:\([0-9]*\)\..*/\1/p' Dockerfile)
+V=$(curl -fsSL https://nodejs.org/dist/index.json | jq -r --arg p "v$L." '[.[] | select(.version | startswith($p))][0].version | ltrimstr("v")')
+curl -fsSL "https://hub.docker.com/v2/repositories/library/node/tags/$V-alpine" | jq -r '.digest, ([.images[].architecture] | unique | join(" "))'
+```
+
+Update the tag and digest together as `FROM node:$V-alpine@<digest>`, using the complete query result including its `sha256:` prefix. The architectures must include `amd64` and `arm64`. To move lines, set `L` to the new line's major version. Once upstream declares a supported LTS range, select a compatible supported line from that declaration.
+
 ## The web app
 
 The web app is pinned separately, in `web/Dockerfile`, to a `standardnotes/web` image by commit tag and digest. Upstream publishes that image for every push to `main` of `standardnotes/app` except its `chore(release): publish` commits, so a release is the image of the release commit's parent: the same code, but the bundle reports the previous version.

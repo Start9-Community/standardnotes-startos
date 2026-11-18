@@ -41,6 +41,8 @@ Upstream publishes no image of the home server, so the package builds its own fr
 | Entrypoint    | `node --require /opt/server/.pnp.cjs dist/bin/server.js` in `packages/home-server`                                                                                                                                                                      |
 | Subcontainers | `standardnotes-server` (daemon `primary`), `valkey` (daemon `valkey`), `web` (daemon `web`)                                                                                                                                                             |
 
+The server runs on a package-tested, supported Node LTS release newer than the end-of-life range upstream's `engines` field declares.
+
 Valkey listens on `127.0.0.1:6379` with persistence disabled; the files service needs it for short-lived valet tokens even in home-server mode. `primary` starts once Valkey answers `PING`. Upstream's `docker/docker-entrypoint.sh` is not used.
 
 Upstream builds its web image for amd64 only, but its contents are architecture-independent static files, so `web/Dockerfile` copies them into a multi-arch nginx image. The image's `index.html` is edited at build time so the app's default sync server and files host are the origin it is loaded from, and its websocket URL is empty (the home server has no websocket service). nginx serves the app's files and proxies every other path to the server on `127.0.0.1:3000`, so the web app and the API share one origin.
