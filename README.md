@@ -41,7 +41,7 @@ Upstream publishes no image of the home server, so the package builds its own fr
 | Entrypoint    | `node --require /opt/server/.pnp.cjs dist/bin/server.js` in `packages/home-server`                                                                                                                                                                      |
 | Subcontainers | `standardnotes-server` (daemon `primary`), `valkey` (daemon `valkey`), `web` (daemon `web`)                                                                                                                                                             |
 
-The root `Dockerfile` pins a supported Node LTS image by version and multi-architecture digest. Build and runtime share that image; the immutable Yarn install runs native dependency install hooks there, and `.dockerignore` excludes local native builds and Yarn install state. Upstream's engine declarations exclude this runtime; package-level build, SQLite, API, and restart checks establish compatibility, not upstream-declared support. See `UPDATING.md` for runtime updates.
+The server runs on a package-tested, supported Node LTS release newer than the end-of-life range upstream's `engines` field declares.
 
 Valkey listens on `127.0.0.1:6379` with persistence disabled; the files service needs it for short-lived valet tokens even in home-server mode. `primary` starts once Valkey answers `PING`. Upstream's `docker/docker-entrypoint.sh` is not used.
 

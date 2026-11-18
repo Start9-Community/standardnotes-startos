@@ -27,11 +27,15 @@ The current pin is the submodule commit (`git submodule status`).
 
 ## The Node runtime
 
-The root `Dockerfile` owns the Node image pin, including its multi-architecture digest. Keep dependency installation, compilation, and execution on the same runtime; never copy native dependencies from a different Node image or a local Yarn install. `.dockerignore` excludes local unplugged modules and Yarn install state. The submodule's `Dockerfile` is not used.
+The root `Dockerfile` pins the `node` Alpine image by tag and digest. While upstream's `engines` field and its own `Dockerfile` name only end-of-life Node releases, they do not set the pin. Take the newest release of the pinned LTS line, and move to the next LTS line before the pinned one reaches its end in the [release schedule](https://github.com/nodejs/Release/blob/main/schedule.json):
 
-Use a security-patched, supported Node LTS release. Node 20 reached end-of-life on 2026-04-30; do not revert to it to satisfy upstream's `>=18 <21` engine declarations. The package validates Node 22 separately without changing those declarations. Check the [Node release schedule](https://github.com/nodejs/Release/blob/main/schedule.json) and [security releases](https://nodejs.org/en/blog/vulnerability) when refreshing the pin, and verify the image supplies both amd64 and arm64.
+```sh
+L=$(sed -n 's/^FROM node:\([0-9]*\)\..*/\1/p' Dockerfile)
+V=$(curl -fsSL https://nodejs.org/dist/index.json | jq -r --arg p "v$L." '[.[] | select(.version | startswith($p))][0].version | ltrimstr("v")')
+curl -fsSL "https://hub.docker.com/v2/repositories/library/node/tags/$V-alpine" | jq -r '.digest, ([.images[].architecture] | unique | join(" "))'
+```
 
-For a runtime update, build the root `Dockerfile` with its unchanged `yarn install --immutable` and `CI=true yarn build` steps. Run the resulting home server with the environment and command from `startos/utils.ts`, a disposable `/data` volume, and the manifest's Valkey image. Check fresh registration, disabled registration, authenticated item sync, the stopped-server `activate-premium.js` action, and restart. Also open a volume created by the previous runtime: its existing session and synced item must remain usable, and SQLite `PRAGMA integrity_check` must return `ok`. A Node version print or native-module import alone does not establish compatibility. Full multi-architecture package builds remain in CI.
+Update the tag and digest together as `FROM node:$V-alpine@<digest>`, using the complete query result including its `sha256:` prefix. The architectures must include `amd64` and `arm64`. To move lines, set `L` to the new line's major version. Once upstream declares a supported LTS range, select a compatible supported line from that declaration.
 
 ## The web app
 
