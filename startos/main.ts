@@ -78,7 +78,6 @@ export const main = sdk.setupMain(async ({ effects }) => {
         gracePeriod: 60_000,
         trigger: sdk.trigger.statusTrigger(30_000, {
           starting: 5_000,
-          waiting: 5_000,
           failure: 5_000,
         }),
         fn: () =>
@@ -116,9 +115,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
         display: i18n('Signups'),
         // The result only changes when main restarts, so check once.
         gracePeriod: 0,
-        trigger: async function* () {
-          yield
-        },
+        trigger: sdk.trigger.onceTrigger,
         fn: () =>
           store.signupsAllowed
             ? {

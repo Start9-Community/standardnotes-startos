@@ -7,5 +7,7 @@ docker-images
 *.s9pk
 server/.git
 server/node_modules
+server/.yarn/unplugged
+server/.yarn/install-state.gz
 server/packages/*/node_modules
 server/packages/*/dist
